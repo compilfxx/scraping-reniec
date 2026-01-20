@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Primer Web Scraper JS</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background-color: #1e1e1e; color: #00ff00; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        input { width: 70%; padding: 10px; background: #333; border: 1px solid #00ff00; color: white; }
+        button { padding: 10px 20px; background: #00ff00; color: black; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #00cc00; }
+        #resultado { margin-top: 20px; border-top: 1px solid #333; padding-top: 10px; }
+        .error { color: red; }
+        .dato { color: cyan; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🕵️‍♂️ Web Scraper v1.0</h1>
+        <p>Introduce una URL para escanear (ej: https://example.com)</p>
+        
+        <input type="text" id="urlInput" placeholder="https://...">
+        <button onclick="escanearWeb()">ESCANEAR</button>
+
+        <div id="resultado">
+            </div>
+    </div>
+
+    <script>
+        async function escanearWeb() {
+            const urlObjetivo = document.getElementById('urlInput').value;
+            const resultadoDiv = document.getElementById('resultado');
+            
+            if (!urlObjetivo) {
+                alert("¡Pon una URL primero!");
+                return;
+            }
+
+            resultadoDiv.innerHTML = "Iniciando hackeo ético... ⏳";
+
+            try {
+                // 1. EL TRUCO: Usamos 'allorigins' como proxy para evitar el bloqueo CORS
+                // Esto le dice a allorigins: "Ve tú a esa web y tráeme el código"
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(urlObjetivo)}`;
+                
+                const respuesta = await fetch(proxyUrl);
+                const datos = await respuesta.json();
+
+                if (!datos.contents) {
+                    throw new Error("No se pudo leer la página");
+                }
+
+                // 2. PARSEAR: Convertimos el texto plano en HTML real para poder buscar cosas
+                const parser = new DOMParser();
+                const htmlDoc = parser.parseFromString(datos.contents, "text/html");
+
+                // 3. EXTRAER: Aquí buscamos lo que queramos (igual que BeautifulSoup en Python)
+                const titulo = htmlDoc.querySelector('title').innerText;
+                const h1 = htmlDoc.querySelector('h1') ? htmlDoc.querySelector('h1').innerText : "No hay H1";
+                const enlaces = htmlDoc.querySelectorAll('a').length;
+
+                // 4. MOSTRAR: Pintamos los datos en la pantalla
+                resultadoDiv.innerHTML = `
+                    <h3 style="color: yellow">--- REPORTE OBTENIDO ---</h3>
+                    <div class="dato">📡 Título de la web: <b>${titulo}</b></div>
+                    <div class="dato">📢 Encabezado H1: <b>${h1}</b></div>
+                    <div class="dato">🔗 Cantidad de enlaces encontrados: <b>${enlaces}</b></div>
+                `;
+
+            } catch (error) {
+                resultadoDiv.innerHTML = `<p class="error">❌ ERROR: ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+    </script>
+
+</body>
+</html>
